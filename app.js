@@ -11,6 +11,8 @@ class MealPlannerApp {
             shoppingLists: {},
             schedules: []
         };
+        this.searchResults = [];
+        this.selectedRecipe = null;
         this.initialize();
     }
 
@@ -460,332 +462,7 @@ class MealPlannerApp {
         }, 1500);
     }
 
-    // Generate shopping list from meal plan
-    generateShoppingListFromMeals(mealPlan) {
-        const allIngredients = {};
-        
-        Object.values(mealPlan).forEach(meal => {
-            const recipe = this.data.recipes.find(r => r.id === meal.recipeId);
-            if (recipe && recipe.ingredients) {
-                recipe.ingredients.forEach(ingredient => {
-                    // Simple ingredient categorization
-                    const category = this.categorizeIngredient(ingredient);
-                    
-                    if (!allIngredients[category]) {
-                        allIngredients[category] = [];
-                    }
-                    
-                    // Check for duplicates
-                    const exists = allIngredients[category].find(item => item.name === ingredient);
-                    if (!exists) {
-                        allIngredients[category].push({
-                            name: ingredient,
-                            price: this.estimatePrice(ingredient)
-                        });
-                    }
-                });
-            }
-        });
-        
-        return allIngredients;
-    }
-
-    // Simple ingredient categorization
-    categorizeIngredient(ingredient) {
-        const lower = ingredient.toLowerCase();
-        
-        if (lower.includes('steak') || lower.includes('chicken') || lower.includes('beef') || 
-            lower.includes('pork') || lower.includes('fish') || lower.includes('meat')) {
-            return 'meat';
-        }
-        if (lower.includes('milk') || lower.includes('cheese') || lower.includes('egg') || 
-            lower.includes('yogurt') || lower.includes('butter')) {
-            return 'dairy';
-        }
-        if (lower.includes('parsley') || lower.includes('garlic') || lower.includes('lemon') || 
-            lower.includes('onion') || lower.includes('vegetables') || lower.includes('basil')) {
-            return 'produce';
-        }
-        if (lower.includes('frozen')) {
-            return 'frozen';
-        }
-        
-        return 'pantry';
-    }
-
-    // Estimate ingredient prices (simple estimation)
-    estimatePrice(ingredient) {
-        const lower = ingredient.toLowerCase();
-        
-        if (lower.includes('steak')) return 15.99;
-        if (lower.includes('chicken')) return 8.99;
-        if (lower.includes('cheese')) return 4.99;
-        if (lower.includes('rice')) return 3.49;
-        if (lower.includes('pasta')) return 1.99;
-        if (lower.includes('sauce')) return 2.49;
-        if (lower.includes('oil')) return 3.99;
-        
-        return Math.random() * 5 + 1; // Random price between $1-6
-    }
-
-    // Utility functions
-    getWeekKey(date) {
-        const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay() + 1); // Monday
-        return startOfWeek.toISOString().split('T')[0];
-    }
-
-    getWeekDisplayText(date) {
-        const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay() + 1);
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
-        return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    }
-
-    getNextFriday() {
-        const now = new Date();
-        const friday = new Date();
-        friday.setDate(now.getDate() + (5 - now.getDay()) % 7);
-        return friday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    }
-
-    getNextSaturday() {
-        const now = new Date();
-        const saturday = new Date();
-        saturday.setDate(now.getDate() + (6 - now.getDay()) % 7);
-        return saturday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    }
-
-    getNextSunday() {
-        const now = new Date();
-        const sunday = new Date();
-        sunday.setDate(now.getDate() + (7 - now.getDay()) % 7);
-        return sunday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    }
-
-    // UI Helper functions
-    showModal() {
-        document.getElementById('recipeModal').style.display = 'flex';
-    }
-
-    closeModal() {
-        document.getElementById('recipeModal').style.display = 'none';
-    }
-
-    showNotification(icon, title, message) {
-        const notification = document.getElementById('notification');
-        document.getElementById('notifIcon').textContent = icon;
-        document.getElementById('notifTitle').textContent = title;
-        document.getElementById('notifMessage').textContent = message;
-        
-        notification.classList.add('show');
-        
-        setTimeout(() => {
-            this.hideNotification();
-        }, 4000);
-    }
-
-    hideNotification() {
-        document.getElementById('notification').classList.remove('show');
-    }
-
-    showLoadingSpinner() {
-        document.getElementById('loadingSpinner').style.display = 'flex';
-    }
-
-    hideLoadingSpinner() {
-        document.getElementById('loadingSpinner').style.display = 'none';
-    }
-
-    showWelcomeMessage() {
-        setTimeout(() => {
-            this.showNotification('👋', 'Welcome to your Family Meal Planner!', 'Start by exploring your recipe vault or planning this week\'s meals.');
-        }, 1000);
-    }
-
-    // Update stats throughout the app
-    updateStats() {
-        const stats = {
-            totalRecipes: this.data.recipes.length,
-            totalMealPlans: Object.keys(this.data.mealPlans).length,
-            activeSchedules: this.data.schedules.filter(s => s.active).length
-        };
-
-        // Update header stats
-        const recipesStored = document.getElementById('recipesStored');
-        if (recipesStored) recipesStored.textContent = stats.totalRecipes;
-
-        const mealsPlanned = document.getElementById('mealsPlanned');
-        if (mealsPlanned) {
-            const currentWeekMeals = this.data.mealPlans[this.getWeekKey(this.currentWeek)];
-            mealsPlanned.textContent = currentWeekMeals ? Object.keys(currentWeekMeals).length : 0;
-        }
-    }
-
-    updateUI() {
-        this.updateStats();
-        this.updateTabContent(this.currentTab);
-    }
-
-    // Initialize method for external use
-    init() {
-        this.initialize();
-    }
-
-    // Week navigation
-    previousWeek() {
-        this.currentWeek.setDate(this.currentWeek.getDate() - 7);
-        this.updateTabContent('planning');
-    }
-
-    nextWeek() {
-        this.currentWeek.setDate(this.currentWeek.getDate() + 7);
-        this.updateTabContent('planning');
-    }
-
-    // Quick action functions
-    quickPlanWeek() {
-        this.showTab('planning');
-        setTimeout(() => {
-            this.autoSuggestWeek();
-        }, 500);
-    }
-
-    generateShoppingList() {
-        this.showTab('shopping');
-        this.showNotification('🛒', 'Shopping List Ready!', 'Generated from your weekly meal plan');
-    }
-
-    saveWeekPlan() {
-        this.saveData();
-        this.showNotification('💾', 'Plan Saved!', 'Your weekly meal plan has been saved successfully');
-    }
-
-    clearWeekPlan() {
-        const weekKey = this.getWeekKey(this.currentWeek);
-        delete this.data.mealPlans[weekKey];
-        this.saveData();
-        this.updateTabContent('planning');
-        this.showNotification('🗑️', 'Plan Cleared', 'Weekly meal plan has been cleared');
-    }
-
-    // Shopping functions
-    optimizeShoppingList() {
-        this.showNotification('⚡', 'List Optimized!', 'Shopping list organized by store layout and deals found');
-    }
-
-    exportShoppingList() {
-        // Create a simple text export
-        const weekKey = this.getWeekKey(this.currentWeek);
-        const mealPlan = this.data.mealPlans[weekKey] || {};
-        const shoppingList = this.generateShoppingListFromMeals(mealPlan);
-        
-        let exportText = `Shopping List - Week of ${this.getWeekDisplayText(this.currentWeek)}\n\n`;
-        
-        Object.entries(shoppingList).forEach(([category, items]) => {
-            if (items.length > 0) {
-                exportText += `${category.toUpperCase()}:\n`;
-                items.forEach(item => {
-                    exportText += `- ${item.name}\n`;
-                });
-                exportText += '\n';
-            }
-        });
-
-        // Create downloadable file
-        const blob = new Blob([exportText], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'shopping-list.txt';
-        a.click();
-        window.URL.revokeObjectURL(url);
-
-        this.showNotification('📄', 'List Exported!', 'Shopping list downloaded as text file');
-    }
-
-    markShoppingComplete() {
-        this.showNotification('✅', 'Shopping Complete!', 'Great job! Ready to cook this week\'s meals');
-    }
-
-    // Schedule functions
-    toggleSchedule(scheduleId) {
-        const schedule = this.data.schedules.find(s => s.id === scheduleId);
-        if (schedule) {
-            schedule.active = !schedule.active;
-            this.saveData();
-            this.updateTabContent('schedule');
-            
-            this.showNotification(
-                schedule.active ? '✅' : '⏸️', 
-                schedule.active ? 'Schedule Enabled' : 'Schedule Disabled',
-                `${schedule.task} is now ${schedule.active ? 'active' : 'inactive'}`
-            );
-        }
-    }
-
-    testNotifications() {
-        this.showNotification('🔔', 'Test Notification', 'Perfect! Your notification system is working correctly');
-    }
-
-    editScheduleSettings() {
-        this.showNotification('⚙️', 'Settings', 'Schedule customization panel would open here');
-    }
-
-    // Recipe functions
-    viewRecipe(recipeId) {
-        const recipe = this.data.recipes.find(r => r.id === recipeId);
-        if (recipe) {
-            const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
-            
-            modalTitle.textContent = recipe.name;
-            
-            modalBody.innerHTML = `
-                <div class="recipe-view">
-                    <div class="recipe-header">
-                        <div class="recipe-emoji-large">${recipe.emoji}</div>
-                        <div class="recipe-meta-large">
-                            <div>⏱️ ${recipe.time} minutes</div>
-                            <div>👥 ${recipe.servings} servings</div>
-                        </div>
-                    </div>
-                    
-                    <div class="recipe-section">
-                        <h3>Ingredients</h3>
-                        <ul>
-                            ${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
-                        </ul>
-                    </div>
-                    
-                    <div class="recipe-section">
-                        <h3>Instructions</h3>
-                        <p>${recipe.instructions}</p>
-                    </div>
-                    
-                    <div class="recipe-tags-section">
-                        ${recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                    </div>
-                    
-                    <div class="recipe-actions">
-                        <button class="btn btn-primary" onclick="app.addToMealPlan(${recipe.id})">Add to Meal Plan</button>
-                        <button class="btn btn-secondary" onclick="app.editRecipe(${recipe.id})">Edit Recipe</button>
-                    </div>
-                </div>
-            `;
-            
-            this.showModal();
-        }
-    }
-
-    addToMealPlan(recipeId) {
-        this.closeModal();
-        this.showTab('planning');
-        this.showNotification('📅', 'Switch to Planning', 'Select a day to add this recipe to your meal plan');
-    }
-
+    // Smart Recipe Search Functions
     showAddRecipeForm() {
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
@@ -1174,6 +851,332 @@ class MealPlannerApp {
         this.updateTabContent('recipes');
         
         this.showNotification('🎉', 'Recipe Added!', `${newRecipe.name} has been added to your recipe vault!`);
+    }
+
+    // Generate shopping list from meal plan
+    generateShoppingListFromMeals(mealPlan) {
+        const allIngredients = {};
+        
+        Object.values(mealPlan).forEach(meal => {
+            const recipe = this.data.recipes.find(r => r.id === meal.recipeId);
+            if (recipe && recipe.ingredients) {
+                recipe.ingredients.forEach(ingredient => {
+                    // Simple ingredient categorization
+                    const category = this.categorizeIngredient(ingredient);
+                    
+                    if (!allIngredients[category]) {
+                        allIngredients[category] = [];
+                    }
+                    
+                    // Check for duplicates
+                    const exists = allIngredients[category].find(item => item.name === ingredient);
+                    if (!exists) {
+                        allIngredients[category].push({
+                            name: ingredient,
+                            price: this.estimatePrice(ingredient)
+                        });
+                    }
+                });
+            }
+        });
+        
+        return allIngredients;
+    }
+
+    // Simple ingredient categorization
+    categorizeIngredient(ingredient) {
+        const lower = ingredient.toLowerCase();
+        
+        if (lower.includes('steak') || lower.includes('chicken') || lower.includes('beef') || 
+            lower.includes('pork') || lower.includes('fish') || lower.includes('meat')) {
+            return 'meat';
+        }
+        if (lower.includes('milk') || lower.includes('cheese') || lower.includes('egg') || 
+            lower.includes('yogurt') || lower.includes('butter')) {
+            return 'dairy';
+        }
+        if (lower.includes('parsley') || lower.includes('garlic') || lower.includes('lemon') || 
+            lower.includes('onion') || lower.includes('vegetables') || lower.includes('basil')) {
+            return 'produce';
+        }
+        if (lower.includes('frozen')) {
+            return 'frozen';
+        }
+        
+        return 'pantry';
+    }
+
+    // Estimate ingredient prices (simple estimation)
+    estimatePrice(ingredient) {
+        const lower = ingredient.toLowerCase();
+        
+        if (lower.includes('steak')) return 15.99;
+        if (lower.includes('chicken')) return 8.99;
+        if (lower.includes('cheese')) return 4.99;
+        if (lower.includes('rice')) return 3.49;
+        if (lower.includes('pasta')) return 1.99;
+        if (lower.includes('sauce')) return 2.49;
+        if (lower.includes('oil')) return 3.99;
+        
+        return Math.random() * 5 + 1; // Random price between $1-6
+    }
+
+    // Utility functions
+    getWeekKey(date) {
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay() + 1); // Monday
+        return startOfWeek.toISOString().split('T')[0];
+    }
+
+    getWeekDisplayText(date) {
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay() + 1);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+
+    getNextFriday() {
+        const now = new Date();
+        const friday = new Date();
+        friday.setDate(now.getDate() + (5 - now.getDay()) % 7);
+        return friday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+
+    getNextSaturday() {
+        const now = new Date();
+        const saturday = new Date();
+        saturday.setDate(now.getDate() + (6 - now.getDay()) % 7);
+        return saturday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+
+    getNextSunday() {
+        const now = new Date();
+        const sunday = new Date();
+        sunday.setDate(now.getDate() + (7 - now.getDay()) % 7);
+        return sunday.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+
+    // UI Helper functions
+    showModal() {
+        document.getElementById('recipeModal').style.display = 'flex';
+    }
+
+    closeModal() {
+        document.getElementById('recipeModal').style.display = 'none';
+    }
+
+    showNotification(icon, title, message) {
+        const notification = document.getElementById('notification');
+        document.getElementById('notifIcon').textContent = icon;
+        document.getElementById('notifTitle').textContent = title;
+        document.getElementById('notifMessage').textContent = message;
+        
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+            this.hideNotification();
+        }, 4000);
+    }
+
+    hideNotification() {
+        document.getElementById('notification').classList.remove('show');
+    }
+
+    showLoadingSpinner() {
+        document.getElementById('loadingSpinner').style.display = 'flex';
+    }
+
+    hideLoadingSpinner() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+    showWelcomeMessage() {
+        setTimeout(() => {
+            this.showNotification('👋', 'Welcome to your Family Meal Planner!', 'Try the new smart recipe search - just type "Chicken Parmesan" and watch the magic!');
+        }, 1000);
+    }
+
+    // Update stats throughout the app
+    updateStats() {
+        const stats = {
+            totalRecipes: this.data.recipes.length,
+            totalMealPlans: Object.keys(this.data.mealPlans).length,
+            activeSchedules: this.data.schedules.filter(s => s.active).length
+        };
+
+        // Update header stats
+        const recipesStored = document.getElementById('recipesStored');
+        if (recipesStored) recipesStored.textContent = stats.totalRecipes;
+
+        const mealsPlanned = document.getElementById('mealsPlanned');
+        if (mealsPlanned) {
+            const currentWeekMeals = this.data.mealPlans[this.getWeekKey(this.currentWeek)];
+            mealsPlanned.textContent = currentWeekMeals ? Object.keys(currentWeekMeals).length : 0;
+        }
+    }
+
+    updateUI() {
+        this.updateStats();
+        this.updateTabContent(this.currentTab);
+    }
+
+    // Initialize method for external use
+    init() {
+        this.initialize();
+    }
+
+    // Week navigation
+    previousWeek() {
+        this.currentWeek.setDate(this.currentWeek.getDate() - 7);
+        this.updateTabContent('planning');
+    }
+
+    nextWeek() {
+        this.currentWeek.setDate(this.currentWeek.getDate() + 7);
+        this.updateTabContent('planning');
+    }
+
+    // Quick action functions
+    quickPlanWeek() {
+        this.showTab('planning');
+        setTimeout(() => {
+            this.autoSuggestWeek();
+        }, 500);
+    }
+
+    generateShoppingList() {
+        this.showTab('shopping');
+        this.showNotification('🛒', 'Shopping List Ready!', 'Generated from your weekly meal plan');
+    }
+
+    saveWeekPlan() {
+        this.saveData();
+        this.showNotification('💾', 'Plan Saved!', 'Your weekly meal plan has been saved successfully');
+    }
+
+    clearWeekPlan() {
+        const weekKey = this.getWeekKey(this.currentWeek);
+        delete this.data.mealPlans[weekKey];
+        this.saveData();
+        this.updateTabContent('planning');
+        this.showNotification('🗑️', 'Plan Cleared', 'Weekly meal plan has been cleared');
+    }
+
+    // Shopping functions
+    optimizeShoppingList() {
+        this.showNotification('⚡', 'List Optimized!', 'Shopping list organized by store layout and deals found');
+    }
+
+    exportShoppingList() {
+        // Create a simple text export
+        const weekKey = this.getWeekKey(this.currentWeek);
+        const mealPlan = this.data.mealPlans[weekKey] || {};
+        const shoppingList = this.generateShoppingListFromMeals(mealPlan);
+        
+        let exportText = `Shopping List - Week of ${this.getWeekDisplayText(this.currentWeek)}\n\n`;
+        
+        Object.entries(shoppingList).forEach(([category, items]) => {
+            if (items.length > 0) {
+                exportText += `${category.toUpperCase()}:\n`;
+                items.forEach(item => {
+                    exportText += `- ${item.name}\n`;
+                });
+                exportText += '\n';
+            }
+        });
+
+        // Create downloadable file
+        const blob = new Blob([exportText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'shopping-list.txt';
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        this.showNotification('📄', 'List Exported!', 'Shopping list downloaded as text file');
+    }
+
+    markShoppingComplete() {
+        this.showNotification('✅', 'Shopping Complete!', 'Great job! Ready to cook this week\'s meals');
+    }
+
+    // Schedule functions
+    toggleSchedule(scheduleId) {
+        const schedule = this.data.schedules.find(s => s.id === scheduleId);
+        if (schedule) {
+            schedule.active = !schedule.active;
+            this.saveData();
+            this.updateTabContent('schedule');
+            
+            this.showNotification(
+                schedule.active ? '✅' : '⏸️', 
+                schedule.active ? 'Schedule Enabled' : 'Schedule Disabled',
+                `${schedule.task} is now ${schedule.active ? 'active' : 'inactive'}`
+            );
+        }
+    }
+
+    testNotifications() {
+        this.showNotification('🔔', 'Test Notification', 'Perfect! Your notification system is working correctly');
+    }
+
+    editScheduleSettings() {
+        this.showNotification('⚙️', 'Settings', 'Schedule customization panel would open here');
+    }
+
+    // Recipe functions
+    viewRecipe(recipeId) {
+        const recipe = this.data.recipes.find(r => r.id === recipeId);
+        if (recipe) {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalTitle.textContent = recipe.name;
+            
+            modalBody.innerHTML = `
+                <div class="recipe-view">
+                    <div class="recipe-header">
+                        <div class="recipe-emoji-large">${recipe.emoji}</div>
+                        <div class="recipe-meta-large">
+                            <div>⏱️ ${recipe.time} minutes</div>
+                            <div>👥 ${recipe.servings} servings</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recipe-section">
+                        <h3>Ingredients</h3>
+                        <ul>
+                            ${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="recipe-section">
+                        <h3>Instructions</h3>
+                        <p>${recipe.instructions}</p>
+                    </div>
+                    
+                    <div class="recipe-tags-section">
+                        ${recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div class="recipe-actions">
+                        <button class="btn btn-primary" onclick="app.addToMealPlan(${recipe.id})">Add to Meal Plan</button>
+                        <button class="btn btn-secondary" onclick="app.editRecipe(${recipe.id})">Edit Recipe</button>
+                    </div>
+                </div>
+            `;
+            
+            this.showModal();
+        }
+    }
+
+    addToMealPlan(recipeId) {
+        this.closeModal();
+        this.showTab('planning');
+        this.showNotification('📅', 'Switch to Planning', 'Select a day to add this recipe to your meal plan');
     }
 
     saveNewRecipe(event) {
