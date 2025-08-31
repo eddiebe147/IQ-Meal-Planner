@@ -591,17 +591,101 @@ class MealPlannerApp {
             return;
         }
 
+        // Show source selection first
+        this.showRecipeSourceSelection(dishName);
+    }
+
+    showRecipeSourceSelection(dishName) {
+        const searchResults = document.getElementById('searchResults');
+        const recipeOptions = document.getElementById('recipeOptions');
+        
+        recipeOptions.innerHTML = `
+            <div class="source-selection">
+                <h4>Choose Your Recipe Source:</h4>
+                <p class="source-hint">Pick where you'd like to find recipes for <strong>"${dishName}"</strong></p>
+                
+                <div class="recipe-sources">
+                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'food-network')">
+                        <div class="source-icon">👨‍🍳</div>
+                        <div class="source-info">
+                            <h4>Food Network</h4>
+                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
+                            <div class="source-desc">Chef-tested recipes from TV professionals</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                    
+                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'serious-eats')">
+                        <div class="source-icon">🧪</div>
+                        <div class="source-info">
+                            <h4>Serious Eats</h4>
+                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
+                            <div class="source-desc">Science-based cooking with detailed techniques</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                    
+                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'bon-appetit')">
+                        <div class="source-icon">🍷</div>
+                        <div class="source-info">
+                            <h4>Bon Appétit</h4>
+                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
+                            <div class="source-desc">Restaurant-quality recipes from food editors</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                    
+                    <div class="recipe-source trusted" onclick="app.searchWithSource('${dishName}', 'nytimes')">
+                        <div class="source-icon">📰</div>
+                        <div class="source-info">
+                            <h4>NYTimes Cooking</h4>
+                            <div class="source-quality">⭐⭐⭐⭐ Trusted</div>
+                            <div class="source-desc">Editorial-quality recipes with ratings</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                    
+                    <div class="recipe-source community" onclick="app.searchWithSource('${dishName}', 'allrecipes')">
+                        <div class="source-icon">👥</div>
+                        <div class="source-info">
+                            <h4>AllRecipes</h4>
+                            <div class="source-quality">⭐⭐⭐ Community</div>
+                            <div class="source-desc">Home cook favorites with reviews</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                    
+                    <div class="recipe-source quick" onclick="app.searchWithSource('${dishName}', 'all-sources')">
+                        <div class="source-icon">🚀</div>
+                        <div class="source-info">
+                            <h4>Search All Sources</h4>
+                            <div class="source-quality">⚡ Quick</div>
+                            <div class="source-desc">Find recipes from multiple trusted sources</div>
+                        </div>
+                        <div class="source-action">→</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        searchResults.style.display = 'block';
+        
+        this.showNotification('🎯', 'Choose Quality Source', 'Pick your preferred recipe source for best results');
+    }
+
+    async searchWithSource(dishName, source) {
         this.showLoadingSpinner();
         
         try {
-            // Show searching notification
-            this.showNotification('🔍', 'Searching...', `Finding great recipes for ${dishName}`);
+            // Show searching notification with source
+            const sourceName = this.getSourceDisplayName(source);
+            this.showNotification('🔍', 'Searching...', `Finding ${sourceName} recipes for ${dishName}`);
             
-            // Simulate API call - in real implementation, this would call a recipe API
-            const recipes = await this.simulateRecipeSearch(dishName);
+            // Search with selected source
+            const recipes = await this.simulateRecipeSearchWithSource(dishName, source);
             
             this.hideLoadingSpinner();
-            this.displayRecipeSearchResults(recipes, dishName);
+            this.displayRecipeSearchResults(recipes, dishName, source);
             
         } catch (error) {
             this.hideLoadingSpinner();
@@ -610,120 +694,149 @@ class MealPlannerApp {
         }
     }
 
-    async simulateRecipeSearch(dishName) {
+    getSourceDisplayName(source) {
+        const sourceNames = {
+            'food-network': 'Food Network',
+            'serious-eats': 'Serious Eats',
+            'bon-appetit': 'Bon Appétit',
+            'nytimes': 'NYTimes Cooking',
+            'allrecipes': 'AllRecipes',
+            'all-sources': 'premium'
+        };
+        return sourceNames[source] || 'quality';
+    }
+
+    async simulateRecipeSearchWithSource(dishName, source) {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Smart recipe database based on dish name
-        const recipeDatabase = {
-            'chicken parmesan': {
-                name: 'Chicken Parmesan',
-                emoji: '🍗',
-                time: 45,
-                servings: 4,
-                ingredients: [
-                    '4 chicken breasts, pounded thin',
-                    '1 cup breadcrumbs',
-                    '1/2 cup parmesan cheese, grated',
-                    '2 eggs, beaten',
-                    '2 cups marinara sauce',
-                    '1 cup mozzarella cheese, shredded',
-                    '2 tbsp olive oil',
-                    'Salt and pepper to taste'
-                ],
-                instructions: 'Preheat oven to 425°F. Season chicken with salt and pepper. Mix breadcrumbs and parmesan. Dip chicken in eggs, then breadcrumb mixture. Heat oil in oven-safe skillet, cook chicken 3-4 minutes per side. Top with sauce and mozzarella, bake 15-20 minutes until cheese melts.',
-                tags: ['dinner', 'italian', 'family', 'comfort-food']
+        // Premium source databases with quality-specific recipes
+        const premiumSources = {
+            'food-network': {
+                'chicken parmesan': {
+                    name: 'Food Network\'s Perfect Chicken Parmesan',
+                    emoji: '🍗',
+                    time: 50,
+                    servings: 4,
+                    source: 'Food Network',
+                    rating: 4.8,
+                    ingredients: [
+                        '4 boneless, skinless chicken breasts, pounded to 1/2-inch thick',
+                        '1 cup all-purpose flour',
+                        '2 large eggs, beaten',
+                        '1 1/2 cups panko breadcrumbs',
+                        '1/2 cup freshly grated Parmigiano-Reggiano',
+                        '2 cups high-quality marinara sauce',
+                        '8 oz fresh mozzarella, sliced',
+                        '1/4 cup fresh basil leaves',
+                        'Kosher salt and freshly ground black pepper',
+                        'Extra-virgin olive oil for frying'
+                    ],
+                    instructions: 'Season chicken with salt and pepper. Set up breading station with flour, eggs, and panko mixed with Parmesan. Bread chicken thoroughly. Heat oil to 350°F, fry chicken 4-5 minutes per side until golden. Transfer to baking sheet, top with sauce and mozzarella. Bake at 425°F for 15 minutes until cheese bubbles. Garnish with fresh basil.',
+                    tags: ['dinner', 'italian', 'family', 'chef-tested']
+                }
             },
-            'beef stroganoff': {
-                name: 'Classic Beef Stroganoff',
-                emoji: '🥩',
-                time: 35,
-                servings: 6,
-                ingredients: [
-                    '1.5 lbs beef sirloin, sliced thin',
-                    '8 oz egg noodles',
-                    '1 onion, sliced',
-                    '8 oz mushrooms, sliced',
-                    '3 cloves garlic, minced',
-                    '1 cup beef broth',
-                    '1/2 cup sour cream',
-                    '2 tbsp flour',
-                    '2 tbsp butter',
-                    'Salt, pepper, and paprika'
-                ],
-                instructions: 'Cook noodles according to package. In large skillet, brown beef in butter. Add onions and mushrooms, cook until soft. Add garlic and flour, cook 1 minute. Gradually add broth, simmer until thick. Stir in sour cream, season with salt, pepper, and paprika. Serve over noodles.',
-                tags: ['dinner', 'comfort-food', 'hearty', 'russian']
+            'serious-eats': {
+                'chicken parmesan': {
+                    name: 'The Science of Perfect Chicken Parm',
+                    emoji: '🧪',
+                    time: 60,
+                    servings: 4,
+                    source: 'Serious Eats',
+                    rating: 4.9,
+                    ingredients: [
+                        '4 chicken breasts, butterflied and pounded to even thickness',
+                        '1 cup Wondra flour (for superior coating)',
+                        '3 whole eggs plus 1 yolk',
+                        '2 cups Japanese panko breadcrumbs',
+                        '1/2 cup aged Parmigiano-Reggiano, microplaned',
+                        '2 cups San Marzano tomato sauce',
+                        '6 oz low-moisture mozzarella, hand-torn',
+                        'Diamond Crystal kosher salt',
+                        'Tellicherry black pepper',
+                        'Neutral oil for frying (canola or vegetable)'
+                    ],
+                    instructions: 'Brine chicken in 6% salt solution for 2 hours. Pat dry, season with pepper. Use three-stage breading with Wondra flour, egg wash with extra yolk, and panko-Parmesan mixture. Press coating firmly. Fry at precisely 350°F, monitoring with thermometer, 4 minutes per side. Internal temp should reach 150°F. Top with sauce and cheese, broil 3-4 minutes until bubbly.',
+                    tags: ['dinner', 'italian', 'technique-focused', 'science-based']
+                }
             },
-            'thai green curry': {
-                name: 'Thai Green Curry with Chicken',
-                emoji: '🍛',
-                time: 30,
-                servings: 4,
-                ingredients: [
-                    '1 lb chicken thighs, cut in chunks',
-                    '1 can coconut milk (14 oz)',
-                    '2-3 tbsp green curry paste',
-                    '1 eggplant, cubed',
-                    '1 bell pepper, sliced',
-                    '1/4 cup thai basil leaves',
-                    '2 tbsp fish sauce',
-                    '1 tbsp brown sugar',
-                    '2 kaffir lime leaves',
-                    'Jasmine rice for serving'
-                ],
-                instructions: 'Heat thick coconut cream in wok, fry curry paste 2 minutes. Add chicken, cook 5 minutes. Add remaining coconut milk, fish sauce, sugar. Add eggplant and peppers, simmer 10 minutes. Stir in basil and lime leaves. Serve over jasmine rice.',
-                tags: ['dinner', 'thai', 'spicy', 'exotic', 'coconut']
-            },
-            'spaghetti carbonara': {
-                name: 'Authentic Spaghetti Carbonara',
-                emoji: '🍝',
-                time: 20,
-                servings: 4,
-                ingredients: [
-                    '1 lb spaghetti',
-                    '6 egg yolks',
-                    '1 cup pecorino romano, grated',
-                    '8 oz pancetta, diced',
-                    '4 cloves garlic, minced',
-                    'Fresh black pepper',
-                    'Salt for pasta water',
-                    '2 tbsp olive oil'
-                ],
-                instructions: 'Cook spaghetti in salted boiling water. Meanwhile, cook pancetta until crispy. Whisk egg yolks with cheese and pepper. Drain pasta, reserving 1 cup pasta water. Toss hot pasta with pancetta, then egg mixture, adding pasta water to create creamy sauce. Serve immediately.',
-                tags: ['dinner', 'italian', 'quick', 'creamy', 'pasta']
-            },
-            'fish tacos': {
-                name: 'Crispy Fish Tacos',
-                emoji: '🌮',
-                time: 25,
-                servings: 4,
-                ingredients: [
-                    '1 lb white fish fillets',
-                    '8 corn tortillas',
-                    '2 cups cabbage, shredded',
-                    '1/2 cup mayo',
-                    '2 tbsp lime juice',
-                    '1 tsp chipotle powder',
-                    '1/4 cup cilantro, chopped',
-                    '1 avocado, sliced',
-                    'Lime wedges for serving'
-                ],
-                instructions: 'Season fish with salt and pepper, pan-fry until flaky, about 4 minutes per side. Warm tortillas. Mix mayo, lime juice, and chipotle for sauce. Assemble tacos with fish, cabbage, avocado, cilantro, and sauce. Serve with lime wedges.',
-                tags: ['dinner', 'mexican', 'light', 'fresh', 'seafood']
+            'bon-appetit': {
+                'chicken parmesan': {
+                    name: 'BA\'s Best Chicken Parmigiana',
+                    emoji: '🍷',
+                    time: 45,
+                    servings: 4,
+                    source: 'Bon Appétit',
+                    rating: 4.7,
+                    ingredients: [
+                        '4 chicken cutlets, pounded thin',
+                        '1 cup "00" flour',
+                        '2 farm-fresh eggs, beaten',
+                        '1 1/2 cups fine breadcrumbs',
+                        '3/4 cup Parmigiano-Reggiano, finely grated',
+                        '2 cups arrabbiata sauce',
+                        '6 oz buffalo mozzarella, torn',
+                        'Maldon sea salt',
+                        'Calabrian chili flakes',
+                        'Good olive oil',
+                        'Fresh oregano leaves'
+                    ],
+                    instructions: 'Season cutlets with Maldon salt. Dredge in "00" flour, egg wash, then breadcrumb-cheese mixture. Shallow fry in good olive oil until golden and crispy. Arrange in baking dish, top with arrabbiata and torn mozzarella. Bake until cheese melts beautifully. Finish with oregano and chili flakes.',
+                    tags: ['dinner', 'italian', 'restaurant-style', 'sophisticated']
+                }
             }
         };
 
-        // Find matching recipes (case insensitive, partial match)
+        const communitySource = {
+            'allrecipes': {
+                'chicken parmesan': {
+                    name: 'Classic Chicken Parmesan',
+                    emoji: '🍗',
+                    time: 40,
+                    servings: 4,
+                    source: 'AllRecipes',
+                    rating: 4.5,
+                    ingredients: [
+                        '4 chicken breasts',
+                        '1 cup flour',
+                        '2 eggs, beaten',
+                        '1 cup breadcrumbs',
+                        '1/2 cup parmesan cheese',
+                        '2 cups marinara sauce',
+                        '1 cup mozzarella cheese, shredded',
+                        'Salt and pepper',
+                        'Vegetable oil'
+                    ],
+                    instructions: 'Pound chicken thin. Season with salt and pepper. Coat in flour, dip in eggs, then coat with breadcrumb-parmesan mixture. Fry in oil until golden brown. Top with sauce and cheese, bake until cheese melts.',
+                    tags: ['dinner', 'family', 'easy', 'crowd-favorite']
+                }
+            }
+        };
+
+        // Search logic based on source
         const searchTerm = dishName.toLowerCase();
+        let sourceData = {};
+        
+        if (source === 'all-sources') {
+            // Combine premium sources for comprehensive search
+            sourceData = { ...premiumSources['food-network'], ...premiumSources['serious-eats'], ...premiumSources['bon-appetit'] };
+        } else if (premiumSources[source]) {
+            sourceData = premiumSources[source];
+        } else if (source === 'allrecipes') {
+            sourceData = communitySource['allrecipes'];
+        } else {
+            sourceData = premiumSources['food-network']; // Fallback to Food Network
+        }
+
         const matches = [];
 
-        // Direct match
-        if (recipeDatabase[searchTerm]) {
-            matches.push(recipeDatabase[searchTerm]);
+        // Find matching recipes
+        if (sourceData[searchTerm]) {
+            matches.push(sourceData[searchTerm]);
         }
 
         // Partial matches
-        Object.entries(recipeDatabase).forEach(([key, recipe]) => {
+        Object.entries(sourceData).forEach(([key, recipe]) => {
             if (key.includes(searchTerm) || searchTerm.includes(key.split(' ')[0])) {
                 if (!matches.find(m => m.name === recipe.name)) {
                     matches.push(recipe);
@@ -731,16 +844,70 @@ class MealPlannerApp {
             }
         });
 
-        // If no direct matches, suggest popular recipes
-        if (matches.length === 0) {
-            matches.push(
-                recipeDatabase['chicken parmesan'],
-                recipeDatabase['spaghetti carbonara'],
-                recipeDatabase['beef stroganoff']
-            );
-        }
+        // Add more dishes to each source for variety
+        const additionalDishes = this.getAdditionalDishesForSource(source, searchTerm);
+        matches.push(...additionalDishes);
 
         return matches.slice(0, 3); // Return top 3 results
+    }
+
+    getAdditionalDishesForSource(source, searchTerm) {
+        // Return source-appropriate additional dishes based on the search term
+        const foodNetworkDishes = [
+            {
+                name: 'Food Network\'s Beef Stroganoff',
+                emoji: '🥩',
+                time: 45,
+                servings: 6,
+                source: 'Food Network',
+                rating: 4.7,
+                ingredients: ['2 lbs beef tenderloin', 'cremini mushrooms', 'sour cream', 'egg noodles', 'beef stock'],
+                instructions: 'Professional technique for restaurant-quality stroganoff...',
+                tags: ['dinner', 'comfort-food', 'chef-approved']
+            }
+        ];
+
+        const seriousEatsDishes = [
+            {
+                name: 'The Ultimate Thai Green Curry',
+                emoji: '🍛',
+                time: 90,
+                servings: 4,
+                source: 'Serious Eats',
+                rating: 4.9,
+                ingredients: ['homemade green curry paste', 'coconut cream', 'thai eggplants', 'kaffir lime leaves'],
+                instructions: 'Deep dive into authentic Thai cooking techniques...',
+                tags: ['dinner', 'thai', 'authentic', 'technique-intensive']
+            }
+        ];
+
+        const bonAppetitDishes = [
+            {
+                name: 'BA\'s Cacio e Pepe Perfected',
+                emoji: '🍝',
+                time: 25,
+                servings: 4,
+                source: 'Bon Appétit',
+                rating: 4.8,
+                ingredients: ['pecorino romano', 'fresh cracked pepper', 'spaghetti', 'pasta water'],
+                instructions: 'The restaurant secret to perfect emulsification...',
+                tags: ['dinner', 'italian', 'minimalist', 'restaurant-quality']
+            }
+        ];
+
+        // Return dishes based on source
+        switch(source) {
+            case 'food-network':
+                return foodNetworkDishes.slice(0, 2);
+            case 'serious-eats':
+                return seriousEatsDishes.slice(0, 2);
+            case 'bon-appetit':
+                return bonAppetitDishes.slice(0, 2);
+            case 'all-sources':
+                return [...foodNetworkDishes.slice(0, 1), ...seriousEatsDishes.slice(0, 1)];
+            default:
+                return foodNetworkDishes.slice(0, 1);
+        }
     }
 
     displayRecipeSearchResults(recipes, searchTerm) {
