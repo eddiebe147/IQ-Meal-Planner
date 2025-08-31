@@ -591,101 +591,17 @@ class MealPlannerApp {
             return;
         }
 
-        // Show source selection first
-        this.showRecipeSourceSelection(dishName);
-    }
-
-    showRecipeSourceSelection(dishName) {
-        const searchResults = document.getElementById('searchResults');
-        const recipeOptions = document.getElementById('recipeOptions');
-        
-        recipeOptions.innerHTML = `
-            <div class="source-selection">
-                <h4>Choose Your Recipe Source:</h4>
-                <p class="source-hint">Pick where you'd like to find recipes for <strong>"${dishName}"</strong></p>
-                
-                <div class="recipe-sources">
-                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'food-network')">
-                        <div class="source-icon">👨‍🍳</div>
-                        <div class="source-info">
-                            <h4>Food Network</h4>
-                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
-                            <div class="source-desc">Chef-tested recipes from TV professionals</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                    
-                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'serious-eats')">
-                        <div class="source-icon">🧪</div>
-                        <div class="source-info">
-                            <h4>Serious Eats</h4>
-                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
-                            <div class="source-desc">Science-based cooking with detailed techniques</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                    
-                    <div class="recipe-source premium" onclick="app.searchWithSource('${dishName}', 'bon-appetit')">
-                        <div class="source-icon">🍷</div>
-                        <div class="source-info">
-                            <h4>Bon Appétit</h4>
-                            <div class="source-quality">⭐⭐⭐⭐⭐ Premium</div>
-                            <div class="source-desc">Restaurant-quality recipes from food editors</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                    
-                    <div class="recipe-source trusted" onclick="app.searchWithSource('${dishName}', 'nytimes')">
-                        <div class="source-icon">📰</div>
-                        <div class="source-info">
-                            <h4>NYTimes Cooking</h4>
-                            <div class="source-quality">⭐⭐⭐⭐ Trusted</div>
-                            <div class="source-desc">Editorial-quality recipes with ratings</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                    
-                    <div class="recipe-source community" onclick="app.searchWithSource('${dishName}', 'allrecipes')">
-                        <div class="source-icon">👥</div>
-                        <div class="source-info">
-                            <h4>AllRecipes</h4>
-                            <div class="source-quality">⭐⭐⭐ Community</div>
-                            <div class="source-desc">Home cook favorites with reviews</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                    
-                    <div class="recipe-source quick" onclick="app.searchWithSource('${dishName}', 'all-sources')">
-                        <div class="source-icon">🚀</div>
-                        <div class="source-info">
-                            <h4>Search All Sources</h4>
-                            <div class="source-quality">⚡ Quick</div>
-                            <div class="source-desc">Find recipes from multiple trusted sources</div>
-                        </div>
-                        <div class="source-action">→</div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        searchResults.style.display = 'block';
-        
-        this.showNotification('🎯', 'Choose Quality Source', 'Pick your preferred recipe source for best results');
-    }
-
-    async searchWithSource(dishName, source) {
         this.showLoadingSpinner();
         
         try {
-            // Show searching notification with source
-            const sourceName = this.getSourceDisplayName(source);
-            this.showNotification('🔍', 'Searching...', `Finding ${sourceName} recipes for ${dishName}`);
+            // Show searching notification
+            this.showNotification('🔍', 'Searching...', `Finding recipes for ${dishName} from all premium sources`);
             
-            // Search with selected source
-            const recipes = await this.simulateRecipeSearchWithSource(dishName, source);
+            // Search across all sources immediately
+            const recipes = await this.simulateRecipeSearchAllSources(dishName);
             
             this.hideLoadingSpinner();
-            this.displayRecipeSearchResults(recipes, dishName, source);
+            this.displayModernRecipeResults(recipes, dishName);
             
         } catch (error) {
             this.hideLoadingSpinner();
@@ -694,16 +610,219 @@ class MealPlannerApp {
         }
     }
 
-    getSourceDisplayName(source) {
-        const sourceNames = {
-            'food-network': 'Food Network',
-            'serious-eats': 'Serious Eats',
-            'bon-appetit': 'Bon Appétit',
-            'nytimes': 'NYTimes Cooking',
-            'allrecipes': 'AllRecipes',
-            'all-sources': 'premium'
-        };
-        return sourceNames[source] || 'quality';
+    async simulateRecipeSearchAllSources(dishName) {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Comprehensive recipe database with multiple sources
+        const allRecipes = [
+            // Tuscan Chicken variations
+            {
+                name: 'Tuscan Chicken Skillet',
+                emoji: '🍗',
+                time: 35,
+                servings: 4,
+                source: 'Food Network',
+                sourceType: 'premium',
+                rating: 4.8,
+                difficulty: 'Easy',
+                description: 'Creamy chicken with sun-dried tomatoes and spinach',
+                ingredients: [
+                    '4 boneless chicken thighs',
+                    '1 cup heavy cream',
+                    '1/2 cup sun-dried tomatoes',
+                    '2 cups fresh spinach',
+                    '3 cloves garlic, minced',
+                    '1/2 cup white wine',
+                    '1/2 cup parmesan cheese',
+                    'Italian seasoning',
+                    'Salt and pepper'
+                ],
+                instructions: 'Season chicken and sear in hot skillet until golden. Remove chicken. Sauté garlic, add wine and sun-dried tomatoes. Stir in cream, bring to simmer. Add spinach and parmesan. Return chicken, simmer until cooked through.',
+                tags: ['tuscan', 'chicken', 'creamy', 'one-pan'],
+                matchScore: 0.95
+            },
+            {
+                name: 'Tuscan Herb Roasted Chicken',
+                emoji: '🌿',
+                time: 60,
+                servings: 6,
+                source: 'Bon Appétit',
+                sourceType: 'premium',
+                rating: 4.7,
+                difficulty: 'Medium',
+                description: 'Whole chicken with rosemary, thyme, and lemon',
+                ingredients: [
+                    '1 whole chicken (3-4 lbs)',
+                    '2 lemons, sliced',
+                    '4 sprigs fresh rosemary',
+                    '6 sprigs fresh thyme',
+                    '4 cloves garlic',
+                    '1/4 cup olive oil',
+                    'Tuscan herb blend',
+                    'Coarse sea salt'
+                ],
+                instructions: 'Preheat oven to 425°F. Stuff chicken cavity with herbs and lemon. Rub skin with olive oil and seasonings. Roast 50-60 minutes until internal temp reaches 165°F. Let rest 10 minutes before carving.',
+                tags: ['tuscan', 'roasted', 'herbs', 'whole-chicken'],
+                matchScore: 0.90
+            },
+            {
+                name: 'Creamy Tuscan Chicken Pasta',
+                emoji: '🍝',
+                time: 30,
+                servings: 4,
+                source: 'Serious Eats',
+                sourceType: 'premium',
+                rating: 4.9,
+                difficulty: 'Easy',
+                description: 'Penne with chicken in rich tomato cream sauce',
+                ingredients: [
+                    '1 lb penne pasta',
+                    '2 lbs chicken breast, cubed',
+                    '1 cup heavy cream',
+                    '1 can diced tomatoes',
+                    '1/2 cup sun-dried tomatoes',
+                    '3 cups fresh spinach',
+                    '1 cup parmesan, grated',
+                    'Italian herbs',
+                    'Garlic and onion'
+                ],
+                instructions: 'Cook pasta al dente. Sear chicken until golden. Sauté aromatics, add tomatoes and cream. Simmer until thick. Toss with pasta, chicken, spinach and cheese. Finish with fresh herbs.',
+                tags: ['tuscan', 'pasta', 'chicken', 'creamy'],
+                matchScore: 0.88
+            },
+            // Add some related alternatives
+            {
+                name: 'Mediterranean Chicken Thighs',
+                emoji: '🫒',
+                time: 40,
+                servings: 4,
+                source: 'NYTimes Cooking',
+                sourceType: 'trusted',
+                rating: 4.6,
+                difficulty: 'Easy',
+                description: 'One-pan chicken with olives and tomatoes',
+                ingredients: [
+                    '8 chicken thighs',
+                    '1 cup kalamata olives',
+                    '1 pint cherry tomatoes',
+                    '1/4 cup olive oil',
+                    'Fresh oregano',
+                    'Lemon juice',
+                    'Feta cheese'
+                ],
+                instructions: 'Brown chicken thighs skin-side down. Add olives, tomatoes, and herbs. Bake until chicken is cooked through. Finish with lemon and feta.',
+                tags: ['mediterranean', 'chicken', 'olives', 'one-pan'],
+                matchScore: 0.75
+            },
+            {
+                name: 'Italian Chicken Parmesan',
+                emoji: '🍗',
+                time: 45,
+                servings: 4,
+                source: 'AllRecipes',
+                sourceType: 'community',
+                rating: 4.5,
+                difficulty: 'Medium',
+                description: 'Classic breaded chicken with marinara and cheese',
+                ingredients: [
+                    '4 chicken breasts',
+                    '1 cup breadcrumbs',
+                    '1/2 cup parmesan',
+                    '2 cups marinara sauce',
+                    '1 cup mozzarella',
+                    'Eggs for breading',
+                    'Italian seasoning'
+                ],
+                instructions: 'Bread chicken with seasoned crumbs and parmesan. Fry until golden. Top with sauce and cheese, bake until bubbly.',
+                tags: ['italian', 'chicken', 'breaded', 'classic'],
+                matchScore: 0.70
+            }
+        ];
+
+        // Filter and sort by relevance to search term
+        const searchTerm = dishName.toLowerCase();
+        let matches = allRecipes.filter(recipe => {
+            const nameMatch = recipe.name.toLowerCase().includes(searchTerm);
+            const tagMatch = recipe.tags.some(tag => tag.includes(searchTerm) || searchTerm.includes(tag));
+            const descMatch = recipe.description.toLowerCase().includes(searchTerm);
+            
+            return nameMatch || tagMatch || descMatch;
+        });
+
+        // Sort by match score (higher is better)
+        matches.sort((a, b) => b.matchScore - a.matchScore);
+
+        // If no matches, return popular alternatives
+        if (matches.length === 0) {
+            matches = allRecipes.slice(0, 3);
+        }
+
+        return matches.slice(0, 4); // Return top 4 results
+    }
+
+    displayModernRecipeResults(recipes, searchTerm) {
+        const searchResults = document.getElementById('searchResults');
+        const recipeOptions = document.getElementById('recipeOptions');
+        
+        if (recipes.length === 0) {
+            recipeOptions.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">😔</div>
+                    <h4>No recipes found for "${searchTerm}"</h4>
+                    <p>Try a different dish name or use manual entry</p>
+                    <button class="btn btn-secondary" onclick="app.showManualMode()">Enter Manually</button>
+                </div>
+            `;
+        } else {
+            recipeOptions.innerHTML = `
+                <div class="modern-results-header">
+                    <h4>Found ${recipes.length} recipes for "${searchTerm}"</h4>
+                    <div class="filter-hint">💡 Recipes sorted by relevance and quality</div>
+                </div>
+                <div class="modern-recipe-grid">
+                    ${recipes.map((recipe, index) => `
+                        <div class="modern-recipe-card ${recipe.sourceType}" onclick="app.selectFoundRecipe(${index})">
+                            <div class="recipe-card-header">
+                                <div class="recipe-emoji-large">${recipe.emoji}</div>
+                                <div class="source-badge ${recipe.sourceType}">
+                                    <span class="source-name">${recipe.source}</span>
+                                    <span class="source-rating">★ ${recipe.rating}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="recipe-card-content">
+                                <h4 class="recipe-title">${recipe.name}</h4>
+                                <p class="recipe-description">${recipe.description}</p>
+                                
+                                <div class="recipe-meta-row">
+                                    <span class="meta-item">⏱️ ${recipe.time} min</span>
+                                    <span class="meta-item">👥 ${recipe.servings}</span>
+                                    <span class="meta-item difficulty-${recipe.difficulty.toLowerCase()}">${recipe.difficulty}</span>
+                                </div>
+                                
+                                <div class="recipe-tags-preview">
+                                    ${recipe.tags.slice(0, 3).map(tag => `<span class="tag-mini">${tag}</span>`).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="recipe-card-action">
+                                <div class="action-button">
+                                    <span class="action-text">View Recipe</span>
+                                    <span class="action-arrow">→</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Store results for later use
+        this.searchResults = recipes;
+        searchResults.style.display = 'block';
+        
+        this.showNotification('✅', 'Recipes Found!', `Found ${recipes.length} quality recipes matching "${searchTerm}"`);
     }
 
     async simulateRecipeSearchWithSource(dishName, source) {
