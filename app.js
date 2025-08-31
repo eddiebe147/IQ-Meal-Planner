@@ -793,50 +793,387 @@ class MealPlannerApp {
         modalTitle.textContent = 'Add New Recipe';
         
         modalBody.innerHTML = `
-            <form class="recipe-form" onsubmit="app.saveNewRecipe(event)">
-                <div class="form-group">
-                    <label>Recipe Name</label>
-                    <input type="text" id="recipeName" required placeholder="e.g., Mom's Spaghetti">
+            <div class="recipe-search-section">
+                <div class="search-method-toggle">
+                    <button type="button" class="search-toggle active" onclick="app.showSearchMode()" id="searchModeBtn">
+                        🔍 Find Recipe
+                    </button>
+                    <button type="button" class="search-toggle" onclick="app.showManualMode()" id="manualModeBtn">
+                        ✍️ Enter Manually
+                    </button>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Emoji</label>
-                        <input type="text" id="recipeEmoji" maxlength="2" placeholder="🍝">
+                <!-- Smart Recipe Search Mode -->
+                <div id="searchMode" class="search-mode active">
+                    <div class="recipe-search-form">
+                        <div class="form-group">
+                            <label>What dish do you want to add?</label>
+                            <div class="search-input-container">
+                                <input type="text" id="dishSearchInput" placeholder="e.g., Chicken Parmesan, Beef Stroganoff, Thai Green Curry" />
+                                <button type="button" class="btn btn-primary search-btn" onclick="app.searchForRecipe()">
+                                    🔍 Find Recipe
+                                </button>
+                            </div>
+                            <div class="search-hint">
+                                💡 Just enter the dish name - we'll find a great recipe for you!
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Cook Time (minutes)</label>
-                        <input type="number" id="recipeTime" required min="1" placeholder="30">
+                    
+                    <!-- Search Results -->
+                    <div id="searchResults" class="search-results" style="display: none;">
+                        <h3>Found Recipes:</h3>
+                        <div id="recipeOptions" class="recipe-options">
+                            <!-- Will be populated by search results -->
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Servings</label>
-                        <input type="number" id="recipeServings" required min="1" placeholder="4">
+                    
+                    <!-- Selected Recipe Preview -->
+                    <div id="recipePreview" class="recipe-preview" style="display: none;">
+                        <h3>Recipe Preview</h3>
+                        <div class="preview-content">
+                            <!-- Will show the selected recipe for approval -->
+                        </div>
+                        <div class="preview-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.backToSearch()">← Back to Search</button>
+                            <button type="button" class="btn btn-primary" onclick="app.approveFoundRecipe()">✅ Add This Recipe</button>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Ingredients (one per line)</label>
-                    <textarea id="recipeIngredients" required placeholder="2 lbs ground beef&#10;1 jar pasta sauce&#10;1 lb spaghetti noodles"></textarea>
+                <!-- Manual Entry Mode -->
+                <div id="manualMode" class="search-mode" style="display: none;">
+                    <form class="recipe-form" onsubmit="app.saveNewRecipe(event)">
+                        <div class="form-group">
+                            <label>Recipe Name</label>
+                            <input type="text" id="recipeName" required placeholder="e.g., Mom's Spaghetti">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Emoji</label>
+                                <input type="text" id="recipeEmoji" maxlength="2" placeholder="🍝">
+                            </div>
+                            <div class="form-group">
+                                <label>Cook Time (minutes)</label>
+                                <input type="number" id="recipeTime" required min="1" placeholder="30">
+                            </div>
+                            <div class="form-group">
+                                <label>Servings</label>
+                                <input type="number" id="recipeServings" required min="1" placeholder="4">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Ingredients (one per line)</label>
+                            <textarea id="recipeIngredients" required placeholder="2 lbs ground beef&#10;1 jar pasta sauce&#10;1 lb spaghetti noodles"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Instructions</label>
+                            <textarea id="recipeInstructions" required placeholder="Brown the ground beef, add sauce, serve over cooked noodles"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Tags (comma separated)</label>
+                            <input type="text" id="recipeTags" placeholder="dinner, family, easy">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Recipe</button>
+                        </div>
+                    </form>
                 </div>
-                
-                <div class="form-group">
-                    <label>Instructions</label>
-                    <textarea id="recipeInstructions" required placeholder="Brown the ground beef, add sauce, serve over cooked noodles"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Tags (comma separated)</label>
-                    <input type="text" id="recipeTags" placeholder="dinner, family, easy">
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Recipe</button>
-                </div>
-            </form>
+            </div>
         `;
         
         this.showModal();
+    }
+
+    // Recipe search mode functions
+    showSearchMode() {
+        document.getElementById('searchMode').style.display = 'block';
+        document.getElementById('manualMode').style.display = 'none';
+        document.getElementById('searchModeBtn').classList.add('active');
+        document.getElementById('manualModeBtn').classList.remove('active');
+    }
+
+    showManualMode() {
+        document.getElementById('searchMode').style.display = 'none';
+        document.getElementById('manualMode').style.display = 'block';
+        document.getElementById('searchModeBtn').classList.remove('active');
+        document.getElementById('manualModeBtn').classList.add('active');
+    }
+
+    async searchForRecipe() {
+        const dishName = document.getElementById('dishSearchInput').value.trim();
+        
+        if (!dishName) {
+            this.showNotification('⚠️', 'Enter Dish Name', 'Please enter the name of the dish you want to find');
+            return;
+        }
+
+        this.showLoadingSpinner();
+        
+        try {
+            // Show searching notification
+            this.showNotification('🔍', 'Searching...', `Finding great recipes for ${dishName}`);
+            
+            // Simulate API call - in real implementation, this would call a recipe API
+            const recipes = await this.simulateRecipeSearch(dishName);
+            
+            this.hideLoadingSpinner();
+            this.displayRecipeSearchResults(recipes, dishName);
+            
+        } catch (error) {
+            this.hideLoadingSpinner();
+            this.showNotification('❌', 'Search Failed', 'Could not find recipes. Please try manual entry.');
+            console.error('Recipe search error:', error);
+        }
+    }
+
+    async simulateRecipeSearch(dishName) {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Smart recipe database based on dish name
+        const recipeDatabase = {
+            'chicken parmesan': {
+                name: 'Chicken Parmesan',
+                emoji: '🍗',
+                time: 45,
+                servings: 4,
+                ingredients: [
+                    '4 chicken breasts, pounded thin',
+                    '1 cup breadcrumbs',
+                    '1/2 cup parmesan cheese, grated',
+                    '2 eggs, beaten',
+                    '2 cups marinara sauce',
+                    '1 cup mozzarella cheese, shredded',
+                    '2 tbsp olive oil',
+                    'Salt and pepper to taste'
+                ],
+                instructions: 'Preheat oven to 425°F. Season chicken with salt and pepper. Mix breadcrumbs and parmesan. Dip chicken in eggs, then breadcrumb mixture. Heat oil in oven-safe skillet, cook chicken 3-4 minutes per side. Top with sauce and mozzarella, bake 15-20 minutes until cheese melts.',
+                tags: ['dinner', 'italian', 'family', 'comfort-food']
+            },
+            'beef stroganoff': {
+                name: 'Classic Beef Stroganoff',
+                emoji: '🥩',
+                time: 35,
+                servings: 6,
+                ingredients: [
+                    '1.5 lbs beef sirloin, sliced thin',
+                    '8 oz egg noodles',
+                    '1 onion, sliced',
+                    '8 oz mushrooms, sliced',
+                    '3 cloves garlic, minced',
+                    '1 cup beef broth',
+                    '1/2 cup sour cream',
+                    '2 tbsp flour',
+                    '2 tbsp butter',
+                    'Salt, pepper, and paprika'
+                ],
+                instructions: 'Cook noodles according to package. In large skillet, brown beef in butter. Add onions and mushrooms, cook until soft. Add garlic and flour, cook 1 minute. Gradually add broth, simmer until thick. Stir in sour cream, season with salt, pepper, and paprika. Serve over noodles.',
+                tags: ['dinner', 'comfort-food', 'hearty', 'russian']
+            },
+            'thai green curry': {
+                name: 'Thai Green Curry with Chicken',
+                emoji: '🍛',
+                time: 30,
+                servings: 4,
+                ingredients: [
+                    '1 lb chicken thighs, cut in chunks',
+                    '1 can coconut milk (14 oz)',
+                    '2-3 tbsp green curry paste',
+                    '1 eggplant, cubed',
+                    '1 bell pepper, sliced',
+                    '1/4 cup thai basil leaves',
+                    '2 tbsp fish sauce',
+                    '1 tbsp brown sugar',
+                    '2 kaffir lime leaves',
+                    'Jasmine rice for serving'
+                ],
+                instructions: 'Heat thick coconut cream in wok, fry curry paste 2 minutes. Add chicken, cook 5 minutes. Add remaining coconut milk, fish sauce, sugar. Add eggplant and peppers, simmer 10 minutes. Stir in basil and lime leaves. Serve over jasmine rice.',
+                tags: ['dinner', 'thai', 'spicy', 'exotic', 'coconut']
+            },
+            'spaghetti carbonara': {
+                name: 'Authentic Spaghetti Carbonara',
+                emoji: '🍝',
+                time: 20,
+                servings: 4,
+                ingredients: [
+                    '1 lb spaghetti',
+                    '6 egg yolks',
+                    '1 cup pecorino romano, grated',
+                    '8 oz pancetta, diced',
+                    '4 cloves garlic, minced',
+                    'Fresh black pepper',
+                    'Salt for pasta water',
+                    '2 tbsp olive oil'
+                ],
+                instructions: 'Cook spaghetti in salted boiling water. Meanwhile, cook pancetta until crispy. Whisk egg yolks with cheese and pepper. Drain pasta, reserving 1 cup pasta water. Toss hot pasta with pancetta, then egg mixture, adding pasta water to create creamy sauce. Serve immediately.',
+                tags: ['dinner', 'italian', 'quick', 'creamy', 'pasta']
+            },
+            'fish tacos': {
+                name: 'Crispy Fish Tacos',
+                emoji: '🌮',
+                time: 25,
+                servings: 4,
+                ingredients: [
+                    '1 lb white fish fillets',
+                    '8 corn tortillas',
+                    '2 cups cabbage, shredded',
+                    '1/2 cup mayo',
+                    '2 tbsp lime juice',
+                    '1 tsp chipotle powder',
+                    '1/4 cup cilantro, chopped',
+                    '1 avocado, sliced',
+                    'Lime wedges for serving'
+                ],
+                instructions: 'Season fish with salt and pepper, pan-fry until flaky, about 4 minutes per side. Warm tortillas. Mix mayo, lime juice, and chipotle for sauce. Assemble tacos with fish, cabbage, avocado, cilantro, and sauce. Serve with lime wedges.',
+                tags: ['dinner', 'mexican', 'light', 'fresh', 'seafood']
+            }
+        };
+
+        // Find matching recipes (case insensitive, partial match)
+        const searchTerm = dishName.toLowerCase();
+        const matches = [];
+
+        // Direct match
+        if (recipeDatabase[searchTerm]) {
+            matches.push(recipeDatabase[searchTerm]);
+        }
+
+        // Partial matches
+        Object.entries(recipeDatabase).forEach(([key, recipe]) => {
+            if (key.includes(searchTerm) || searchTerm.includes(key.split(' ')[0])) {
+                if (!matches.find(m => m.name === recipe.name)) {
+                    matches.push(recipe);
+                }
+            }
+        });
+
+        // If no direct matches, suggest popular recipes
+        if (matches.length === 0) {
+            matches.push(
+                recipeDatabase['chicken parmesan'],
+                recipeDatabase['spaghetti carbonara'],
+                recipeDatabase['beef stroganoff']
+            );
+        }
+
+        return matches.slice(0, 3); // Return top 3 results
+    }
+
+    displayRecipeSearchResults(recipes, searchTerm) {
+        const searchResults = document.getElementById('searchResults');
+        const recipeOptions = document.getElementById('recipeOptions');
+        
+        if (recipes.length === 0) {
+            recipeOptions.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">😔</div>
+                    <h4>No recipes found for "${searchTerm}"</h4>
+                    <p>Try a different dish name or use manual entry</p>
+                    <button class="btn btn-secondary" onclick="app.showManualMode()">Enter Manually</button>
+                </div>
+            `;
+        } else {
+            recipeOptions.innerHTML = recipes.map((recipe, index) => `
+                <div class="recipe-option" onclick="app.selectFoundRecipe(${index})">
+                    <div class="recipe-option-emoji">${recipe.emoji}</div>
+                    <div class="recipe-option-info">
+                        <h4>${recipe.name}</h4>
+                        <div class="recipe-option-meta">
+                            ⏱️ ${recipe.time} min • 👥 ${recipe.servings} servings
+                        </div>
+                        <div class="recipe-option-tags">
+                            ${recipe.tags.slice(0, 3).map(tag => `<span class="mini-tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="recipe-option-action">
+                        <span class="select-arrow">→</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Store results for later use
+        this.searchResults = recipes;
+        searchResults.style.display = 'block';
+        
+        this.showNotification('✅', 'Recipes Found!', `Found ${recipes.length} great recipes for ${searchTerm}`);
+    }
+
+    selectFoundRecipe(index) {
+        const recipe = this.searchResults[index];
+        this.selectedRecipe = recipe;
+        
+        const recipePreview = document.getElementById('recipePreview');
+        const previewContent = recipePreview.querySelector('.preview-content');
+        
+        previewContent.innerHTML = `
+            <div class="recipe-preview-header">
+                <div class="recipe-preview-emoji">${recipe.emoji}</div>
+                <div class="recipe-preview-info">
+                    <h3>${recipe.name}</h3>
+                    <div class="recipe-preview-meta">
+                        ⏱️ ${recipe.time} minutes • 👥 ${recipe.servings} servings
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recipe-preview-section">
+                <h4>Ingredients:</h4>
+                <ul class="ingredient-list">
+                    ${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="recipe-preview-section">
+                <h4>Instructions:</h4>
+                <p class="instructions-text">${recipe.instructions}</p>
+            </div>
+            
+            <div class="recipe-preview-tags">
+                ${recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
+            
+            <div class="edit-hint">
+                💡 You can edit any details after adding this recipe to your vault
+            </div>
+        `;
+        
+        document.getElementById('searchResults').style.display = 'none';
+        recipePreview.style.display = 'block';
+    }
+
+    backToSearch() {
+        document.getElementById('searchResults').style.display = 'block';
+        document.getElementById('recipePreview').style.display = 'none';
+    }
+
+    approveFoundRecipe() {
+        if (!this.selectedRecipe) return;
+        
+        const newRecipe = {
+            id: Date.now(),
+            name: this.selectedRecipe.name,
+            emoji: this.selectedRecipe.emoji,
+            time: this.selectedRecipe.time,
+            servings: this.selectedRecipe.servings,
+            ingredients: this.selectedRecipe.ingredients,
+            instructions: this.selectedRecipe.instructions,
+            tags: this.selectedRecipe.tags
+        };
+        
+        this.data.recipes.push(newRecipe);
+        this.saveData();
+        this.closeModal();
+        this.updateTabContent('recipes');
+        
+        this.showNotification('🎉', 'Recipe Added!', `${newRecipe.name} has been added to your recipe vault!`);
     }
 
     saveNewRecipe(event) {
