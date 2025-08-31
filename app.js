@@ -910,7 +910,7 @@ class MealPlannerApp {
         }
     }
 
-    displayRecipeSearchResults(recipes, searchTerm) {
+    displayRecipeSearchResults(recipes, searchTerm, source) {
         const searchResults = document.getElementById('searchResults');
         const recipeOptions = document.getElementById('recipeOptions');
         
@@ -919,35 +919,47 @@ class MealPlannerApp {
                 <div class="no-results">
                     <div class="no-results-icon">😔</div>
                     <h4>No recipes found for "${searchTerm}"</h4>
-                    <p>Try a different dish name or use manual entry</p>
+                    <p>Try a different dish name or source</p>
                     <button class="btn btn-secondary" onclick="app.showManualMode()">Enter Manually</button>
                 </div>
             `;
         } else {
-            recipeOptions.innerHTML = recipes.map((recipe, index) => `
-                <div class="recipe-option" onclick="app.selectFoundRecipe(${index})">
-                    <div class="recipe-option-emoji">${recipe.emoji}</div>
-                    <div class="recipe-option-info">
-                        <h4>${recipe.name}</h4>
-                        <div class="recipe-option-meta">
-                            ⏱️ ${recipe.time} min • 👥 ${recipe.servings} servings
-                        </div>
-                        <div class="recipe-option-tags">
-                            ${recipe.tags.slice(0, 3).map(tag => `<span class="mini-tag">${tag}</span>`).join('')}
-                        </div>
-                    </div>
-                    <div class="recipe-option-action">
-                        <span class="select-arrow">→</span>
-                    </div>
+            const sourceName = this.getSourceDisplayName(source);
+            recipeOptions.innerHTML = `
+                <div class="results-header">
+                    <h4>Found ${recipes.length} ${sourceName} recipes for "${searchTerm}"</h4>
+                    <button class="btn btn-secondary btn-small" onclick="app.searchForRecipe()">← Choose Different Source</button>
                 </div>
-            `).join('');
+                ${recipes.map((recipe, index) => `
+                    <div class="recipe-option premium-result" onclick="app.selectFoundRecipe(${index})">
+                        <div class="recipe-option-emoji">${recipe.emoji}</div>
+                        <div class="recipe-option-info">
+                            <h4>${recipe.name}</h4>
+                            <div class="recipe-source-badge">
+                                <span class="source-name">${recipe.source}</span>
+                                ${recipe.rating ? `<span class="source-rating">★ ${recipe.rating}</span>` : ''}
+                            </div>
+                            <div class="recipe-option-meta">
+                                ⏱️ ${recipe.time} min • 👥 ${recipe.servings} servings
+                            </div>
+                            <div class="recipe-option-tags">
+                                ${recipe.tags.slice(0, 3).map(tag => `<span class="mini-tag premium">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="recipe-option-action">
+                            <span class="select-arrow">→</span>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
         }
         
         // Store results for later use
         this.searchResults = recipes;
         searchResults.style.display = 'block';
         
-        this.showNotification('✅', 'Recipes Found!', `Found ${recipes.length} great recipes for ${searchTerm}`);
+        const sourceName = this.getSourceDisplayName(source);
+        this.showNotification('✅', 'Quality Recipes Found!', `Found ${recipes.length} ${sourceName} recipes with professional techniques`);
     }
 
     selectFoundRecipe(index) {
